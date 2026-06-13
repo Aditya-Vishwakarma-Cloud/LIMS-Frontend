@@ -435,7 +435,7 @@ export default function UserManagement() {
                     value={createForm.name}
                     onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
                     placeholder="John Doe"
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm text-black"
                   />
                 </div>
 
@@ -447,7 +447,7 @@ export default function UserManagement() {
                     value={createForm.email}
                     onChange={(e) => setCreateForm({...createForm, email: e.target.value})}
                     placeholder="john@example.com"
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm text-black"
                   />
                 </div>
 
@@ -459,7 +459,7 @@ export default function UserManagement() {
                     value={createForm.password}
                     onChange={(e) => setCreateForm({...createForm, password: e.target.value})}
                     placeholder="••••••••"
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm text-black"
                   />
                 </div>
 
@@ -468,7 +468,7 @@ export default function UserManagement() {
                   <select
                     value={createForm.status}
                     onChange={(e) => setCreateForm({...createForm, status: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm bg-white"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm bg-white text-black"
                   >
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="INACTIVE">INACTIVE</option>
@@ -537,7 +537,7 @@ export default function UserManagement() {
                     value={editForm.name}
                     onChange={(e) => setEditForm({...editForm, name: e.target.value})}
                     placeholder="John Doe"
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm text-black"
                   />
                 </div>
 
@@ -546,7 +546,7 @@ export default function UserManagement() {
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({...editForm, status: e.target.value})}
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm bg-white"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm bg-white text-black"
                   >
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="INACTIVE">INACTIVE</option>
@@ -622,7 +622,7 @@ export default function UserManagement() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min 6 characters"
-                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm"
+                    className="w-full px-4 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl text-sm text-black"
                   />
                 </div>
 
