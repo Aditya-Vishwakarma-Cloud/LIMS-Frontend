@@ -216,6 +216,8 @@ export default function UserManagement() {
         return 'bg-cyan-100 text-cyan-800 border-cyan-200';
       case 'ROLE_TECHNICIAN':
         return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'ROLE_RECEPTION':
+        return 'bg-pink-100 text-pink-800 border-pink-200';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-200';
     }
@@ -248,7 +250,8 @@ export default function UserManagement() {
     'ROLE_LAB_MANAGER',
     'ROLE_QUALITY_ENGINEER',
     'ROLE_TECHNICIAN',
-    'ROLE_CLIENT_VIEWER'
+    'ROLE_CLIENT_VIEWER',
+    'ROLE_RECEPTION'
   ];
 
   return (

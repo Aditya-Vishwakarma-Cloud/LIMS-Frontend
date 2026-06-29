@@ -132,13 +132,13 @@ export default function Sidebar() {
 
   const activeMenuItems = menuItems.filter(item => {
     if (item.id === 'dashboard') return true;
-    if (item.id === 'search') return !isClient;
+    if (item.id === 'search') return !isClient || !isTechnician;
     if (item.id === 'customer') return isSuperAdmin || isAdmin || isLabManager || isClient || isReception || isQualityEngineer;
     if (item.id === 'project') return isSuperAdmin || isAdmin || isLabManager || isClient || isReception || isQualityEngineer;
     if (item.id === 'work-order') return isSuperAdmin || isAdmin || isLabManager || isClient || isReception || isQualityEngineer;
     if (item.id === 'masters') return isSuperAdmin || isAdmin || isLabManager || isQualityEngineer || isReception;
     if (item.id === 'sample') return true;
-    if (item.id === 'plan') return isSuperAdmin || isAdmin || isLabManager;
+    if (item.id === 'plan') return isSuperAdmin || isAdmin || isLabManager || isTechnician;
     if (item.id === 'assigning') return isSuperAdmin || isAdmin || isLabManager || isQualityEngineer || isTechnician;
     if (item.id === 'results') return isSuperAdmin || isAdmin || isLabManager || isQualityEngineer || isTechnician;
     if (item.id === 'review') return isSuperAdmin || isAdmin || isLabManager || isQualityEngineer;

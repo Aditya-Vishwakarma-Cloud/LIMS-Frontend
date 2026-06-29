@@ -30,6 +30,7 @@ function RegisterSampleForm() {
     collectionDate: new Date().toISOString().split('T')[0],
     collectionLocation: '',
     collectedById: '',
+    collectedByName: '',
     priority: 'Normal',
     remarks: ''
   });
@@ -186,21 +187,16 @@ function RegisterSampleForm() {
             />
           </div>
 
-          {/* Collected By (User Selector) */}
+          {/* Collected By (Free Text) */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Collected By (Technician)</label>
-            <select
-              value={formData.collectedById}
-              onChange={(e) => setFormData({ ...formData, collectedById: e.target.value })}
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Collected By</label>
+            <input
+              type="text"
+              placeholder="Name of person who collected"
+              value={formData.collectedByName}
+              onChange={(e) => setFormData({ ...formData, collectedByName: e.target.value, collectedById: '' })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
-            >
-              <option value="">Select Technician</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.email})
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* Priority */}

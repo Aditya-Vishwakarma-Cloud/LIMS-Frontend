@@ -341,17 +341,34 @@ export default function AddCustomer() {
                       </label>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Industry
-                      </label>
-                      <input
-                        type="text"
-                        name="industry"
-                        value={formData.industry}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Customer Type
+                        </label>
+                        <select
+                          name="customerType"
+                          value={formData.customerType}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                        >
+                          <option value="Premium">Premium</option>
+                          <option value="Standard">Standard</option>
+                          <option value="Basic">Basic</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tally Ledger Reference
+                        </label>
+                        <input
+                          type="text"
+                          name="tallyLedgerName"
+                          value={formData.tallyLedgerName}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

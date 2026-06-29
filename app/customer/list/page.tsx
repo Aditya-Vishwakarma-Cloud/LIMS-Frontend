@@ -156,9 +156,9 @@ export default function CustomerList() {
                       <td className="px-6 py-4 text-sm text-center font-bold text-blue-900 border-r border-gray-200 bg-blue-50/50">{customer.totalProjects || 0}</td>
                       <td className="px-6 py-4 text-sm border-r border-gray-200">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
-                          customer.block ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          customer.block === 'Blocked' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
-                          {customer.block ? 'BLOCKED' : 'ACTIVE'}
+                          {customer.block === 'Blocked' ? 'BLOCKED' : 'ACTIVE'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-right space-x-3 whitespace-nowrap">

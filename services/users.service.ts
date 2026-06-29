@@ -34,6 +34,11 @@ export const usersService = {
     return response.data.data;
   },
 
+  async getActiveTechnicians(): Promise<UserResponse[]> {
+    const response = await api.get<ApiResponse<UserResponse[]>>('/users/technicians');
+    return response.data.data;
+  },
+
   async searchUsers(query: string): Promise<UserResponse[]> {
     const response = await api.get<ApiResponse<UserResponse[]>>(`/users/search?query=${encodeURIComponent(query)}`);
     return response.data.data;

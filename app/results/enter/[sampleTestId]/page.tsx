@@ -67,7 +67,7 @@ export default function ResultEntryPage({ params }: PageProps) {
         // Result record not saved yet (no draft exists)
         setStatus('DRAFT');
         setVersion(1);
-        initializeEmptyObservations(test.testCode || '');
+        initializeEmptyObservations(test.testCode || test.testName || '');
       }
 
     } catch (err) {
@@ -94,7 +94,7 @@ export default function ResultEntryPage({ params }: PageProps) {
         "Initial Setting Time (mins)": "",
         "Final Setting Time (mins)": ""
       });
-    } else if (code.includes('BITUMEN') || code.includes('TRIAL')) {
+    } else if (code.includes('BITUMEN') || code.includes('TRIAL') || code.includes('COMPRESSION') || code.includes('TENSILE') || code.includes('STRENGTH')) {
       setObservations({
         "Trial 1": "",
         "Trial 2": "",
@@ -116,8 +116,8 @@ export default function ResultEntryPage({ params }: PageProps) {
     setObservations(updatedObs);
 
     // Dynamic Client-side Calculations & Automations
-    const testCode = (sampleTest?.testCode || '').toUpperCase();
-    if (testCode.includes('BITUMEN') || testCode.includes('TRIAL')) {
+    const testCode = (sampleTest?.testCode || sampleTest?.testName || '').toUpperCase();
+    if (testCode.includes('BITUMEN') || testCode.includes('TRIAL') || testCode.includes('COMPRESSION') || testCode.includes('TENSILE') || testCode.includes('STRENGTH')) {
       const t1 = Number(updatedObs["Trial 1"] || 0);
       const t2 = Number(updatedObs["Trial 2"] || 0);
       const t3 = Number(updatedObs["Trial 3"] || 0);

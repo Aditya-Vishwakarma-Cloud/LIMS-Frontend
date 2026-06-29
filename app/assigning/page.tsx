@@ -19,7 +19,9 @@ export default function AssigningPage() {
   const isAdmin = roles.includes('ROLE_ADMIN');
   const isLabManager = roles.includes('ROLE_LAB_MANAGER');
 
-  const canAssign = isSuperAdmin || isAdmin || isLabManager;
+  const isTechnician = roles.includes('ROLE_TECHNICIAN');
+
+  const canAssign = isSuperAdmin || isAdmin || isLabManager || isTechnician;
 
   const [pendingSamples, setPendingSamples] = useState<Sample[]>([]);
   const [loadingSamples, setLoadingSamples] = useState(true);
@@ -78,12 +80,7 @@ export default function AssigningPage() {
 
   const fetchTechnicians = async () => {
     try {
-      const data = await usersService.getAllUsers();
-      // Filter active technicians.
-      const techs = data.filter(u => 
-        u.status === 'ACTIVE' && 
-        u.roles.includes('ROLE_TECHNICIAN')
-      );
+      const techs = await usersService.getActiveTechnicians();
       setTechnicians(techs);
     } catch (err) {
       console.error('Failed to load technicians', err);
