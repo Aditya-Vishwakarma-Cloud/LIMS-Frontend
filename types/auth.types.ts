@@ -4,7 +4,8 @@ export type RoleName =
   | 'ROLE_LAB_MANAGER'
   | 'ROLE_QUALITY_ENGINEER'
   | 'ROLE_TECHNICIAN'
-  | 'ROLE_CLIENT_VIEWER';
+  | 'ROLE_CLIENT_VIEWER'
+  | 'ROLE_RECEPTION';
 
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'LOCKED' | 'PENDING';
 

@@ -1,11 +1,34 @@
 "use client";
 
 import Layout from '@/app/components/Layout';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Building, Shield, Save, Upload } from 'lucide-react';
+import { useAuthStore } from '@/store/auth.store';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { user, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        const roles = user.roles || [];
+        const canAccessSettings = roles.includes('ROLE_SUPER_ADMIN') || roles.includes('ROLE_ADMIN');
+        if (!canAccessSettings) {
+          router.push('/dashboard?error=unauthorized');
+        }
+      }
+    }
+  }, [user, isLoading, router]);
+
   const [activeTab, setActiveTab] = useState<'general' | 'security'>('general');
+
+  if (isLoading || !user) {
+    return null;
+  }
 
   return (
     <Layout>

@@ -17,18 +17,19 @@ export default function Layout({ children, showSidebar = true }: LayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 bg-white">
       {showSidebar && (
         <>
           {/* Mobile overlay */}
           {isSidebarOpen && (
-            <div 
+            <div
               className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
               onClick={toggleSidebar}
             />
           )}
           {/* Sidebar */}
           <div className={`
+            bg-white border-r border-gray-200
             fixed lg:relative z-30 lg:z-0
             transition-transform duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}

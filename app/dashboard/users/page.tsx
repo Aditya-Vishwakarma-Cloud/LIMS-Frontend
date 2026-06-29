@@ -252,7 +252,7 @@ export default function UserManagement() {
   ];
 
   return (
-    <RouteGuard>
+    <RouteGuard allowedRoles={['ROLE_SUPER_ADMIN', 'ROLE_ADMIN']}>
       <Layout>
         <div className="p-6 max-w-7xl mx-auto space-y-6">
           {/* Header Section */}

@@ -3,14 +3,29 @@
 import Layout from '@/app/components/Layout';
 import { Search as SearchIcon, Plus, Filter, FileText, Download, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function InvoiceDashboard() {
-  const mockInvoices = [
+  const { user } = useAuthStore();
+  const roles = user?.roles || [];
+  const isSuperAdmin = roles.includes('ROLE_SUPER_ADMIN');
+  const isAdmin = roles.includes('ROLE_ADMIN');
+  const isReception = roles.includes('ROLE_RECEPTION');
+  const isClient = roles.includes('ROLE_CLIENT_VIEWER');
+
+  const canCreateInvoice = isSuperAdmin || isAdmin || isReception;
+
+  const allInvoices = [
     { id: 'INV-2026-1001', client: 'Apex Construction Corp', date: '2026-05-25', due: '2026-06-10', amount: 45000, status: 'Sent' },
     { id: 'INV-2026-1002', client: 'Global Builders Ltd', date: '2026-05-15', due: '2026-05-30', amount: 12500, status: 'Paid' },
     { id: 'INV-2026-1003', client: 'City Metro Authority', date: '2026-04-20', due: '2026-05-05', amount: 89000, status: 'Overdue' },
     { id: 'INV-2026-1004', client: 'Sunrise Developments', date: '2026-05-28', due: '2026-06-12', amount: 6200, status: 'Draft' },
   ];
+
+  // Clients can only see their own project invoices
+  const mockInvoices = isClient 
+    ? allInvoices.filter(inv => inv.client === 'City Metro Authority') 
+    : allInvoices;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -35,10 +50,12 @@ export default function InvoiceDashboard() {
               <Download className="w-4 h-4" />
               <span>Export</span>
             </button>
-            <Link href="/invoice/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center space-x-2 transition-colors">
-              <Plus className="w-4 h-4" />
-              <span>Create Invoice</span>
-            </Link>
+            {canCreateInvoice && (
+              <Link href="/invoice/create" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center space-x-2 transition-colors">
+                <Plus className="w-4 h-4" />
+                <span>Create Invoice</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -116,7 +133,9 @@ export default function InvoiceDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link href={`/invoice/preview/${inv.id}`} className="text-blue-600 hover:text-blue-900 mr-4">Preview</Link>
-                      <button className="text-gray-600 hover:text-gray-900">Manage</button>
+                      {!isClient && (
+                        <button className="text-gray-600 hover:text-gray-900">Manage</button>
+                      )}
                     </td>
                   </tr>
                 ))}

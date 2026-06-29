@@ -188,6 +188,13 @@ export default function Login() {
         </p>
       </div>
 
+      {/* Version */}
+      <div className="absolute bottom-6 right-6 z-10 pointer-events-none">
+        <p className="text-[11px] md:text-xs text-slate-400 font-medium">
+          LIMS v1.0.0
+        </p>
+      </div>
+
       <style jsx global>{`
         @keyframes fade-in-up {
           0% {

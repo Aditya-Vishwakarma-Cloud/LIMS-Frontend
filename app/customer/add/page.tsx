@@ -1,26 +1,29 @@
 "use client";
 
 import Layout from '@/app/components/Layout';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, AlertCircle, Plus, Trash } from 'lucide-react';
 import { useState } from 'react';
-import { customerService, Customer } from '@/services/customerService';
+import { customerService, Customer, ContactPerson } from '@/services/customerService';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AddCustomer() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
   const [formData, setFormData] = useState<Customer>({
     customerName: '',
     aliasName: '',
     address: '',
-    country: '',
+    country: 'India',
     state: '',
     city: '',
-    currency: '',
+    currency: 'INR',
     area: '',
     pinCode: '',
-    customerType: '',
-    block: '',
+    customerType: 'Premium',
+    block: 'Active',
     blockReason: '',
     salutations: '',
     contactPerson: '',
@@ -44,7 +47,17 @@ export default function AddCustomer() {
     alternateMobileNo: '',
     alternateTelephoneNo: '',
     faxNo: '',
-    alternateAddress: ''
+    alternateAddress: '',
+    primaryContactId: '',
+    contactPersons: []
+  });
+
+  // Dynamic Contact Form
+  const [newContact, setNewContact] = useState({
+    name: '',
+    designation: '',
+    phone: '',
+    email: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -56,40 +69,42 @@ export default function AddCustomer() {
     }));
   };
 
+  const handleAddContact = () => {
+    if (!newContact.name.trim()) return;
+    const updatedContacts = [...(formData.contactPersons || []), { ...newContact }];
+    setFormData(prev => ({ ...prev, contactPersons: updatedContacts }));
+    setNewContact({ name: '', designation: '', phone: '', email: '' });
+  };
+
+  const handleRemoveContact = (index: number) => {
+    const contacts = [...(formData.contactPersons || [])];
+    const removed = contacts.splice(index, 1)[0];
+    const update: Partial<Customer> = { contactPersons: contacts };
+    if (removed.id === formData.primaryContactId) {
+      update.primaryContactId = '';
+    }
+    setFormData(prev => ({ ...prev, ...update }));
+  };
+
   const validate = () => {
     if (!formData.customerName.trim()) {
-      alert("Customer Name is required.");
+      setError("Customer Name is required.");
       return false;
     }
     return true;
   };
 
-  const handleSave = async (action: 'save' | 'savenew' | 'savelist') => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!validate()) return;
-    
+
     setLoading(true);
     try {
       await customerService.createCustomer(formData);
-      alert('Customer saved successfully!'); // Use proper toast in real app
-      
-      if (action === 'savelist') {
-        router.push('/customer/list');
-      } else if (action === 'savenew') {
-        // Reset form
-        setFormData({
-            customerName: '', aliasName: '', address: '', country: '', state: '', city: '', currency: '',
-            area: '', pinCode: '', customerType: '', block: '', blockReason: '', salutations: '', contactPerson: '',
-            description: '', emailId: '', mobileNumber: '', telephoneNumber: '', vendorCode: '', tallyLedgerName: '',
-            gstNo: '', discount: '', gstNotApplicable: false, sez: false, serviceTaxNote: '', panNo: '', sacNo: '',
-            salesManager: '', dispatchMode: '', industry: '', alternateEmailId: '', alternateMobileNo: '',
-            alternateTelephoneNo: '', faxNo: '', alternateAddress: ''
-        });
-      } else {
-        // Just save, stay on page (could redirect to edit page, but for now stay)
-      }
-    } catch (error: any) {
-      console.error(error);
-      alert(error.response?.data?.message || 'Failed to save customer');
+      router.push('/customer/list');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to create customer');
     } finally {
       setLoading(false);
     }
@@ -98,54 +113,38 @@ export default function AddCustomer() {
   return (
     <Layout>
       <div className="p-6 space-y-6">
-        {/* Header with title and action buttons */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <h2 className="text-2xl font-semibold text-gray-800">Customer Master</h2>
-            <div className="flex flex-wrap gap-3">
-              <button 
-                onClick={(e) => { e.preventDefault(); handleSave('savenew'); }}
-                disabled={loading}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded-md font-medium transition-colors text-sm md:text-base flex-1 sm:flex-none disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
-                SAVE & NEW
-              </button>
-              <button 
-                onClick={(e) => { e.preventDefault(); handleSave('savelist'); }}
-                disabled={loading}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded-md font-medium transition-colors text-sm md:text-base flex-1 sm:flex-none disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
-                SAVE & LIST
-              </button>
-              <button 
-                onClick={(e) => { e.preventDefault(); handleSave('save'); }}
-                disabled={loading}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded-md font-medium transition-colors text-sm md:text-base flex-1 sm:flex-none disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
-                SAVE
-              </button>
+          <div className="flex items-center space-x-4 mb-6">
+            <Link href="/customer/list" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Add Customer</h2>
+              <p className="text-sm text-gray-500 mt-1">Configure client details, billing offices and contact persons.</p>
             </div>
           </div>
 
-          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-            {/* Main Content Grid */}
+          {error && (
+            <div className="mb-6 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-lg flex items-center space-x-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSave} className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
+
               {/* Left Column */}
-              <div className="space-y-8">
-                {/* Customer Detail Section */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-6 text-center border-b border-gray-300 pb-2">
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-2">
                     Customer Detail
                   </h3>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Customer Name <span className="text-red-500">*</span>
+                        Customer / Company Name <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -153,7 +152,7 @@ export default function AddCustomer() {
                         value={formData.customerName}
                         onChange={handleChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                       />
                     </div>
 
@@ -166,7 +165,7 @@ export default function AddCustomer() {
                         name="aliasName"
                         value={formData.aliasName}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                       />
                     </div>
 
@@ -175,11 +174,11 @@ export default function AddCustomer() {
                         Address
                       </label>
                       <textarea
-                        rows={4}
+                        rows={3}
                         name="address"
                         value={formData.address}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                       ></textarea>
                     </div>
 
@@ -193,7 +192,7 @@ export default function AddCustomer() {
                           name="country"
                           value={formData.country}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                       <div>
@@ -205,7 +204,7 @@ export default function AddCustomer() {
                           name="state"
                           value={formData.state}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                     </div>
@@ -220,7 +219,7 @@ export default function AddCustomer() {
                           name="city"
                           value={formData.city}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                       <div>
@@ -232,7 +231,7 @@ export default function AddCustomer() {
                           name="currency"
                           value={formData.currency}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                     </div>
@@ -247,7 +246,7 @@ export default function AddCustomer() {
                           name="area"
                           value={formData.area}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                       <div>
@@ -259,40 +258,25 @@ export default function AddCustomer() {
                           name="pinCode"
                           value={formData.pinCode}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex space-x-6">
-                        <label className="flex items-center">
-                          <input type="radio" name="customerType" value="Premium" checked={formData.customerType === 'Premium'} onChange={handleChange} className="mr-2" />
-                          <span className="text-sm text-gray-700">Premium Customer</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input type="radio" name="customerType" value="Monthly" checked={formData.customerType === 'Monthly'} onChange={handleChange} className="mr-2" />
-                          <span className="text-sm text-gray-700">Monthly Customer</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input type="radio" name="customerType" value="Disable" checked={formData.customerType === 'Disable'} onChange={handleChange} className="mr-2" />
-                          <span className="text-sm text-gray-700">Disable Customer</span>
-                        </label>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Block
+                          Status
                         </label>
-                        <input
-                          type="text"
+                        <select
                           name="block"
                           value={formData.block}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Blocked">Blocked</option>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -303,142 +287,21 @@ export default function AddCustomer() {
                           name="blockReason"
                           value={formData.blockReason}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                     </div>
+
                   </div>
                 </div>
 
-                {/* Contact Info Section */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-6 text-center border-b border-gray-300 pb-2">
-                    Contact Info
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Salutations
-                      </label>
-                      <input
-                        type="text"
-                        name="salutations"
-                        value={formData.salutations}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Person
-                      </label>
-                      <input
-                        type="text"
-                        name="contactPerson"
-                        value={formData.contactPerson}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Description
-                      </label>
-                      <input
-                        type="text"
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email ID
-                      </label>
-                      <input
-                        type="email"
-                        name="emailId"
-                        value={formData.emailId}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Mobile Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="mobileNumber"
-                        value={formData.mobileNumber}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Telephone Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="telephoneNumber"
-                        value={formData.telephoneNumber}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-8">
                 {/* Additional Detail Section */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-6 text-center border-b border-gray-300 pb-2">
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-2">
                     Additional Detail
                   </h3>
-                  
+
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Vendor Code
-                      </label>
-                      <input
-                        type="text"
-                        name="vendorCode"
-                        value={formData.vendorCode}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tally Ledger Name
-                      </label>
-                      <div className="relative">
-                        <select 
-                          name="tallyLedgerName"
-                          value={formData.tallyLedgerName}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none"
-                        >
-                          <option value="">Select Tally Ledger</option>
-                          <option value="Ledger 1">Ledger 1</option>
-                          <option value="Ledger 2">Ledger 2</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -449,48 +312,10 @@ export default function AddCustomer() {
                           name="gstNo"
                           value={formData.gstNo}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          disabled={formData.gstNotApplicable}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 disabled:bg-gray-100"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Discount
-                        </label>
-                        <input
-                          type="text"
-                          name="discount"
-                          value={formData.discount}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex space-x-6">
-                      <label className="flex items-center">
-                        <input type="checkbox" name="gstNotApplicable" checked={formData.gstNotApplicable} onChange={handleChange} className="mr-2" />
-                        <span className="text-sm text-gray-700">GST Not Applicable</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input type="checkbox" name="sez" checked={formData.sez} onChange={handleChange} className="mr-2" />
-                        <span className="text-sm text-gray-700">SEZ</span>
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Service Tax Note
-                      </label>
-                      <textarea
-                        rows={3}
-                        name="serviceTaxNote"
-                        value={formData.serviceTaxNote}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      ></textarea>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           PAN No
@@ -500,47 +325,20 @@ export default function AddCustomer() {
                           name="panNo"
                           value={formData.panNo}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          SAC No
-                        </label>
-                        <input
-                          type="text"
-                          name="sacNo"
-                          value={formData.sacNo}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Sales Manager
+                    <div className="flex space-x-6">
+                      <label className="flex items-center">
+                        <input type="checkbox" name="gstNotApplicable" checked={formData.gstNotApplicable} onChange={handleChange} className="mr-2" />
+                        <span className="text-sm font-semibold text-gray-700">GST Not Applicable</span>
                       </label>
-                      <input
-                        type="text"
-                        name="salesManager"
-                        value={formData.salesManager}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Dispatch Mode
+                      <label className="flex items-center">
+                        <input type="checkbox" name="sez" checked={formData.sez} onChange={handleChange} className="mr-2" />
+                        <span className="text-sm font-semibold text-gray-700">SEZ</span>
                       </label>
-                      <input
-                        type="text"
-                        name="dispatchMode"
-                        value={formData.dispatchMode}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
                     </div>
 
                     <div>
@@ -552,86 +350,161 @@ export default function AddCustomer() {
                         name="industry"
                         value={formData.industry}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
                       />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Alternate Contact Info Section */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-6 text-center border-b border-gray-300 pb-2">
-                    Alternate Contact Info
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Alternate Email ID
-                      </label>
-                      <input
-                        type="email"
-                        name="alternateEmailId"
-                        value={formData.alternateEmailId}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Alternate Mobile No.
-                      </label>
-                      <input
-                        type="tel"
-                        name="alternateMobileNo"
-                        value={formData.alternateMobileNo}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Alternate Telephone No
-                      </label>
-                      <input
-                        type="tel"
-                        name="alternateTelephoneNo"
-                        value={formData.alternateTelephoneNo}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Fax No
-                      </label>
-                      <input
-                        type="text"
-                        name="faxNo"
-                        value={formData.faxNo}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Alternate Address
-                      </label>
-                      <textarea
-                        rows={4}
-                        name="alternateAddress"
-                        value={formData.alternateAddress}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      ></textarea>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-100 space-y-6">
+                  <h3 className="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2">
+                    Contact Persons
+                  </h3>
+
+                  {/* Add New Contact inline form */}
+                  <div className="p-4 bg-white rounded-lg border border-gray-200 space-y-3">
+                    <h4 className="text-sm font-bold text-gray-700">Add Contact Representative</h4>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-gray-500 mb-0.5">Name *</label>
+                        <input
+                          type="text"
+                          value={newContact.name}
+                          onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded bg-white text-gray-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-500 mb-0.5">Designation</label>
+                        <input
+                          type="text"
+                          value={newContact.designation}
+                          onChange={(e) => setNewContact({ ...newContact, designation: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded bg-white text-gray-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-500 mb-0.5">Phone</label>
+                        <input
+                          type="tel"
+                          value={newContact.phone}
+                          onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded bg-white text-gray-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-500 mb-0.5">Email</label>
+                        <input
+                          type="email"
+                          value={newContact.email}
+                          onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded bg-white text-gray-800"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddContact}
+                      className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-1.5 rounded text-xs font-semibold flex items-center justify-center space-x-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add to list</span>
+                    </button>
+                  </div>
+
+                  {/* List of contact persons */}
+                  <div className="space-y-3">
+                    {formData.contactPersons?.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic text-center py-2">No contacts configured yet.</p>
+                    ) : (
+                      formData.contactPersons?.map((c, index) => (
+                        <div key={index} className="p-3 bg-white rounded-lg border border-gray-200 flex justify-between items-center">
+                          <div className="text-xs space-y-1">
+                            <p className="font-bold text-gray-800">{c.name}</p>
+                            <p className="text-gray-400">{c.designation || 'Representative'}</p>
+                            <p className="text-gray-500">{c.phone} | {c.email}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveContact(index)}
+                            className="p-1 hover:bg-rose-50 text-rose-600 rounded transition-colors"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                </div>
+
+                {/* Primary billing contact details */}
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-2">
+                    Primary Office contact details
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email ID</label>
+                      <input
+                        type="email"
+                        name="emailId"
+                        value={formData.emailId || ''}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                      <input
+                        type="tel"
+                        name="mobileNumber"
+                        value={formData.mobileNumber || ''}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Alternative Site address</label>
+                      <textarea
+                        rows={2}
+                        name="alternateAddress"
+                        value={formData.alternateAddress || ''}
+                        onChange={handleChange}
+                        placeholder="Multiple site addresses office notes..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <div className="pt-4 border-t flex justify-end space-x-3">
+              <Link
+                href="/customer/list"
+                className="px-6 py-2 border border-gray-300 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 flex items-center justify-center bg-white"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-semibold shadow-sm flex items-center justify-center space-x-2"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>Save Customer</span>
+              </button>
             </div>
           </form>
         </div>

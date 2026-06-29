@@ -4,9 +4,21 @@ import { useState } from 'react';
 import Layout from '../components/Layout';
 import { Search as SearchIcon, FileText, Download, FilePlus, Filter, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function ReportsDashboard() {
-  const [activeTab, setActiveTab] = useState<'Ready' | 'Generated'>('Ready');
+  const { user } = useAuthStore();
+  const roles = user?.roles || [];
+  const isSuperAdmin = roles.includes('ROLE_SUPER_ADMIN');
+  const isAdmin = roles.includes('ROLE_ADMIN');
+  const isLabManager = roles.includes('ROLE_LAB_MANAGER');
+  const isQualityEngineer = roles.includes('ROLE_QUALITY_ENGINEER');
+  const isClient = roles.includes('ROLE_CLIENT_VIEWER');
+
+  const canGenerate = isSuperAdmin || isAdmin || isLabManager;
+  const canRelease = isSuperAdmin || isAdmin || isLabManager;
+
+  const [activeTab, setActiveTab] = useState<'Ready' | 'Generated'>(canGenerate ? 'Ready' : 'Generated');
 
   const mockReady = [
     { id: 'APP-501', sampleId: 'SMP-2026-0001', project: 'Metro Line 3', material: 'Concrete', testCount: 3, dateApproved: '2026-05-28' },
@@ -16,6 +28,12 @@ export default function ReportsDashboard() {
   const mockGenerated = [
     { reportId: 'RPT-2026-0001', sampleId: 'SMP-2026-0000', project: 'Commercial Complex Delta', dateGenerated: '2026-05-27', status: 'Published' },
   ];
+
+  // Client and Technician only download their own reports
+  const readyList = canGenerate ? mockReady : [];
+  const generatedList = isClient 
+    ? mockGenerated.filter(item => item.project === 'Metro Line 3' || item.project === 'Commercial Complex Delta') 
+    : mockGenerated;
 
   return (
     <Layout>
@@ -37,17 +55,19 @@ export default function ReportsDashboard() {
         {/* Tabs & Content Area */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('Ready')}
-              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors flex-1 text-center sm:flex-none sm:text-left ${
-                activeTab === 'Ready' 
-                  ? 'border-blue-600 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Ready for Reporting
-              <span className="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">2</span>
-            </button>
+            {canGenerate && (
+              <button
+                onClick={() => setActiveTab('Ready')}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors flex-1 text-center sm:flex-none sm:text-left ${
+                  activeTab === 'Ready' 
+                    ? 'border-blue-600 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Ready for Reporting
+                <span className="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">{readyList.length}</span>
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('Generated')}
               className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors flex-1 text-center sm:flex-none sm:text-left ${
@@ -104,7 +124,7 @@ export default function ReportsDashboard() {
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {activeTab === 'Ready' ? (
-                  mockReady.map((item) => (
+                  readyList.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{item.id}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">{item.sampleId}</td>
@@ -126,7 +146,7 @@ export default function ReportsDashboard() {
                     </tr>
                   ))
                 ) : (
-                  mockGenerated.map((item) => (
+                  generatedList.map((item) => (
                     <tr key={item.reportId} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 flex items-center space-x-2">
                         <FileText className="w-4 h-4 text-red-500" />
@@ -143,7 +163,9 @@ export default function ReportsDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button className="text-blue-600 hover:text-blue-900 mr-4">View PDF</button>
-                        <button className="text-gray-600 hover:text-gray-900">Email</button>
+                        {canRelease && (
+                          <button className="text-gray-600 hover:text-gray-900">Email</button>
+                        )}
                       </td>
                     </tr>
                   ))

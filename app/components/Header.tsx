@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, User, Menu, ChevronDown, Calendar, Key, LogOut, X, Lock, Loader2 } from 'lucide-react';
+import { Bell, User, Menu, ChevronDown, Calendar, Key, LogOut, X, Lock, Loader2, Check, AlertOctagon, AlertTriangle, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { notificationService, NotificationDto } from '@/services/notificationService';
 
 interface HeaderProps {
   toggleSidebar?: () => void;
@@ -13,10 +14,14 @@ interface HeaderProps {
 export default function Header({ toggleSidebar }: HeaderProps = {}) {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [loginTime, setLoginTime] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+  
   const user = useAuthStore(state => state.user);
+  const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -43,16 +48,58 @@ export default function Header({ toggleSidebar }: HeaderProps = {}) {
     }
   }, [user]);
 
+  const fetchNotifications = async () => {
+    try {
+      if (user?.id) {
+        const data = await notificationService.getUnreadNotifications(user.id);
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+      const timer = setInterval(fetchNotifications, 10000); // Poll every 10 seconds for real-time notifications
+      return () => clearInterval(timer);
+    }
+  }, [user]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead(id);
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      if (user?.id) {
+        await notificationService.markAllAsRead(user.id);
+        fetchNotifications();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -173,9 +220,82 @@ export default function Header({ toggleSidebar }: HeaderProps = {}) {
           </div>
           
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-              <Bell className="w-5 h-5" />
-            </button>
+            {/* Notification Bell with Dropdown Popover */}
+            <div className="relative" ref={notifDropdownRef}>
+              <button 
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 text-[10px] font-bold flex items-center justify-center border border-white animate-pulse">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotifOpen && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden text-slate-800">
+                  <div className="px-4 py-3 bg-slate-50 border-b border-gray-200 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Notifications ({notifications.length})</span>
+                    {notifications.length > 0 && (
+                      <button 
+                        onClick={handleMarkAllAsRead}
+                        className="text-[10px] font-extrabold text-blue-600 hover:underline uppercase"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-gray-400 text-xs">
+                        No new notifications.
+                      </div>
+                    ) : (
+                      notifications.map((notif) => {
+                        let priorityColor = "text-slate-400 bg-slate-50";
+                        let PriorityIcon = Info;
+                        if (notif.priority === 'CRITICAL') {
+                          priorityColor = "text-rose-600 bg-rose-50";
+                          PriorityIcon = AlertOctagon;
+                        } else if (notif.priority === 'HIGH') {
+                          priorityColor = "text-orange-500 bg-orange-50";
+                          PriorityIcon = AlertTriangle;
+                        } else if (notif.priority === 'MEDIUM') {
+                          priorityColor = "text-blue-600 bg-blue-50";
+                          PriorityIcon = Info;
+                        }
+
+                        return (
+                          <div key={notif.id} className="p-4 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                            <div className={`p-2 rounded-lg shrink-0 ${priorityColor}`}>
+                              <PriorityIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col items-start text-left">
+                              <h4 className="text-xs font-bold text-slate-800 truncate w-full">{notif.title}</h4>
+                              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed text-left w-full whitespace-normal break-words">{notif.message}</p>
+                              <span className="text-[9px] text-gray-400 mt-2 block font-mono">
+                                {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleMarkAsRead(notif.id)}
+                              className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 shrink-0 self-start"
+                              title="Mark as read"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="flex items-center space-x-2">
               <div className="hidden sm:flex flex-col text-right">

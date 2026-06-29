@@ -3,8 +3,32 @@
 import Layout from '@/app/components/Layout';
 import { ArrowLeft, Printer, Download, CheckCircle, QrCode } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/auth.store';
 
 export default function GenerateReportPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const { user, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        const roles = user.roles || [];
+        const canGenerate = roles.includes('ROLE_SUPER_ADMIN') || roles.includes('ROLE_ADMIN') || roles.includes('ROLE_LAB_MANAGER');
+        if (!canGenerate) {
+          router.push('/dashboard?error=unauthorized');
+        }
+      }
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || !user) {
+    return null;
+  }
+
   // Mock data for the report
   const sampleId = params.id || 'SMP-2026-0001';
 
